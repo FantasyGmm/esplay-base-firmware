@@ -13,6 +13,13 @@ extern "C"
 {
 #endif
 
+typedef struct
+{
+	uint8_t cmd;
+	uint8_t data[16];
+	uint8_t dataBytes; //No of data in data; bit 7 = delay after set; 0xFF = end of cmds.
+} lcd_init_cmd_t;
+
 void display_init();
 void backlight_deinit();
 void display_send_fb(uint16_t* buffer);

@@ -1,21 +1,16 @@
 #include "freertos/FreeRTOS.h"
-#include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
-#include "esp_heap_caps.h"
 #include "esp_flash_partitions.h"
 #include "rom/crc.h"
-
 #include <string.h>
-
 #include "sdcard.h"
 #include "display.h"
 #include "gamepad.h"
-
 #include "../components/ugui/ugui.h"
 
 
@@ -299,7 +294,6 @@ static void print_partitions()
 static void write_partition_table(esplay_partition_t* parts, size_t parts_count)
 {
     esp_err_t err;
-
 
     // Read table
     const esp_partition_info_t* partition_data = (const esp_partition_info_t*)malloc(ESP_PARTITION_TABLE_MAX_LEN);

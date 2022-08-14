@@ -8,8 +8,6 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "gamepad.h"
-#include <driver/adc.h>
-#include "esp_adc_cal.h"
 #if CONFIG_USE_LVGL
 #include "lvgl/lv_hal/lv_hal_indev.h"
 #include "lvgl/lv_core/lv_group.h"
@@ -30,8 +28,8 @@ static input_gamepad_state previous_gamepad_state;
 static uint8_t debounce[GAMEPAD_INPUT_MAX];
 static volatile bool input_gamepad_initialized = false;
 static SemaphoreHandle_t xSemaphore;
-static gpio_num_t i2c_gpio_sda = 21;
-static gpio_num_t i2c_gpio_scl = 22;
+static gpio_num_t i2c_gpio_sda = 10;
+static gpio_num_t i2c_gpio_scl = 11;
 static uint32_t i2c_frequency = 100000;
 static i2c_port_t i2c_port = I2C_NUM_0;
 

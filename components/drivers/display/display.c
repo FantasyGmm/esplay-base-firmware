@@ -3,7 +3,6 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -19,14 +18,15 @@
 #define LINE_COUNT (24)
 
 // Pin Cofiguration
-#define DISP_SPI_MOSI 23
-#define DISP_SPI_CLK 18
-#define DISP_SPI_CS 5
-#define DISP_SPI_DC 12
-#define LCD_BCKL 27
+#define DISP_SPI_MOSI 12
+#define DISP_SPI_CLK 48
+#define DISP_SPI_CS 8
+#define DISP_SPI_DC 47
+#define LCD_BCKL 39
+#define LCD_RST 3
 
 // SPI Parameter
-#define SPI_CLOCK_SPEED (60 * 1000 * 1000)
+#define SPI_CLOCK_SPEED (80 * 1000 * 1000)
 #define LCD_HOST       SPI2_HOST
 
 // The pixel number in horizontal and vertical
@@ -299,9 +299,6 @@ void display_init()
     spi_bus_config_t buscfg = {
         .sclk_io_num = DISP_SPI_CLK,
         .mosi_io_num = DISP_SPI_MOSI,
-        .miso_io_num = -1,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
         .max_transfer_sz = LINE_COUNT * LCD_H_RES * 2 + 8
     };
 
@@ -323,26 +320,61 @@ void display_init()
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
 
     esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = -1,
-        .color_space = ESP_LCD_COLOR_SPACE_BGR,
+        .reset_gpio_num = LCD_RST,
+        .color_space = ESP_LCD_COLOR_SPACE_RGB,
         .bits_per_pixel = 16,
     };
     // Initialize the LCD configuration
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-
-    // Turn off backlight to avoid unpredictable display on the LCD screen while initializing
-    // the LCD panel driver. (Different LCD screens may need different levels)
+	// Reset the display
+	ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
     set_display_brightness(0);
-
-    // Reset the display
-    ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
-
     // Initialize LCD panel
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
-
-    // Swap x and y axis (Different LCD screens may need different options)
-    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
-
+	// Reset the display
+	esp_lcd_panel_reset(panel_handle);
+	esp_lcd_panel_invert_color(panel_handle, true);
+	esp_lcd_panel_set_gap(panel_handle, 0, 0);
+	lcd_init_cmd_t st_init_cmds[] = {
+			{0x01, {0}, 0x80},
+			//-----------------------ST7789V Frame rate setting-----------------//
+			{0x3A, {0X05}, 1},                     //65k mode
+			{0xC5, {0x1A}, 1},                     //VCOM
+//			{0x36, {0x00}, 1},      //屏幕显示方向设置
+			//-------------ST7789V Frame rate setting-----------//
+			{0xB2, {0x05, 0x05, 0x00, 0x33, 0x33}, 5},  //Porch Setting
+			{0xB7, {0x05}, 1},                     //Gate Control //12.2v   -10.43v
+			//--------------ST7789V Power setting---------------//
+			{0xBB, {0x3F}, 1},                     //VCOM
+			{0xC0, {0x2c}, 1},						//Power control
+			{0xC2, {0x01}, 1},						//VDV and VRH Command Enable
+			{0xC3, {0x0F}, 1},						//VRH Set 4.3+( vcom+vcom offset+vdv)
+			{0xC4, {0xBE}, 1},					    //VDV Set 0v
+			{0xC6, {0X01}, 1},                    //Frame Rate Control in Normal Mode 111Hz
+			{0xD0, {0xA4,0xA1}, 2},           //Power Control 1
+			{0xE8, {0x03}, 1},                    //Power Control 1
+			{0xE9, {0x09,0x09,0x08}, 3},  //Equalize time control
+			//---------------ST7789V gamma setting-------------//
+			{0xE0, {0xD0,0x05,0x09,0x09,0x08,0x14,0x28,0x33,0x3F,0x07,0x13,0x14,0x28,0x30}, 14},//Set Gamma
+			{0XE1, {0xD0, 0x05, 0x09, 0x09, 0x08, 0x03, 0x24, 0x32, 0x32, 0x3B, 0x14, 0x13, 0x28, 0x2F, 0x1F}, 14},//Set Gamma
+			{0x20, {0}, 0},                           //反显
+			{0x11, {0}, 0},                           //Exit Sleep // 退出睡眠模式
+			{0x29, {0}, 0x80},                        //Display on // 开显示
+			{0, {0}, 0xff},
+	};
+	//Send all the commands
+	uint16_t cmd = 0;
+	while (st_init_cmds[cmd].dataBytes != 0xff)
+	{
+		esp_lcd_panel_io_tx_param(io_handle,st_init_cmds[cmd].cmd,st_init_cmds[cmd].data,st_init_cmds[cmd].dataBytes & 0x1F);
+		if (st_init_cmds[cmd].dataBytes & 0x80)
+		{
+			vTaskDelay(100 / portTICK_RATE_MS);
+		}
+		cmd++;
+	}
+	esp_lcd_panel_swap_xy(panel_handle, 1);
+	esp_lcd_panel_mirror(panel_handle, true, false);
     // Turn ON Display
     set_display_brightness(100);
 }

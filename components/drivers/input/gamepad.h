@@ -18,9 +18,9 @@
 #endif
 
 #ifdef CONFIG_ESPLAY_MICRO_HW
-#define L_BTN   36
-#define R_BTN   34
-#define MENU    35
+#define L_BTN   40
+#define R_BTN   41
+#define MENU    42
 #endif
 
 enum
