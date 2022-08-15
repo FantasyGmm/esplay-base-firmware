@@ -743,16 +743,13 @@ void flash_firmware(const char* fullPath)
                 indicate_error();
             }
 
-
             // TODO: verify
-
-
-
 
             // Notify OK
             sprintf(tempstring, "OK: [%d] Length=%#08x", parts_count, length);
 
             printf("%s\n", tempstring);
+            print_partitions();
             //DisplayFooter(tempstring);
         }
 
