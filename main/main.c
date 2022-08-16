@@ -363,8 +363,8 @@ static void write_partition_table(esplay_partition_t* parts, size_t parts_count)
         part->flags = parts[i].flags;
 
         offset += parts[i].length;
+	    if (((startFlashAddress+offset) % 4096) != 0) offset += 4096 - ((startFlashAddress + offset) % 4096);
     }
-
     //abort();
 
     // Erase partition table
@@ -639,6 +639,8 @@ void flash_firmware(const char* fullPath)
             indicate_error();
         }
 
+		if ((curren_flash_address % 4096) != 0) curren_flash_address += 4096 - (curren_flash_address % 4096);
+
         if ((curren_flash_address & 0xffff0000) != curren_flash_address)
         {
             DisplayError("PARTITION LENGTH ALIGNMENT ERROR");
@@ -671,22 +673,20 @@ void flash_firmware(const char* fullPath)
             // turn LED off
             gpio_set_level(GPIO_NUM_2, 0);
 
-
             // erase
             int eraseBlocks = length / ERASE_BLOCK_SIZE;
             if (eraseBlocks * ERASE_BLOCK_SIZE < length) ++eraseBlocks;
 
             // Display
-            sprintf(tempstring, "Erasing ... (%d)", parts_count);
+            sprintf(tempstring, "Erasing ... (%d),Current Flash Address ... (%X)", parts_count,curren_flash_address);
 
             printf("%s\n", tempstring);
+	        sprintf(tempstring, "Erasing ... (%d)",parts_count);
             DisplayProgress(0);
             DisplayMessage(tempstring);
-
             esp_err_t ret = spi_flash_erase_range(curren_flash_address, eraseBlocks * ERASE_BLOCK_SIZE);
             if (ret != ESP_OK)
             {
-                printf("spi_flash_erase_range failed. eraseBlocks=%d\n", eraseBlocks);
                 DisplayError("ERASE ERROR");
                 indicate_error();
             }
@@ -703,7 +703,7 @@ void flash_firmware(const char* fullPath)
                 // Display
                 sprintf(tempstring, "Writing (%d)", parts_count);
 
-                printf("%s - %#08x\n", tempstring, offset);
+                printf("%s - %#08x - %#X\n", tempstring, offset,curren_flash_address + offset);
                 DisplayProgress((float)offset / (float)(length - ERASE_BLOCK_SIZE) * 100.0f);
                 DisplayMessage(tempstring);
 
@@ -749,7 +749,6 @@ void flash_firmware(const char* fullPath)
             sprintf(tempstring, "OK: [%d] Length=%#08x", parts_count, length);
 
             printf("%s\n", tempstring);
-            print_partitions();
             //DisplayFooter(tempstring);
         }
 
@@ -884,8 +883,7 @@ void flash_firmware(const char* fullPath)
 
     // Write partition table
     write_partition_table(parts, parts_count);
-
-
+	print_partitions();
     free(data);
 
     // Close SD card
@@ -1218,7 +1216,7 @@ void app_main(void)
 
 
     display_init();
-    display_show_splash();
+//    display_show_splash();
     display_clear(0xffff);
 
     UG_Init(&gui, pset, 320, 240);

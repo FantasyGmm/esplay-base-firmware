@@ -1,0 +1,3 @@
+/Users/fantasy/clionProject/mkfw/build/CMakeFiles/mkfw.dir
+/Users/fantasy/clionProject/mkfw/build/CMakeFiles/edit_cache.dir
+/Users/fantasy/clionProject/mkfw/build/CMakeFiles/rebuild_cache.dir
