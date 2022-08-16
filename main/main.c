@@ -641,11 +641,11 @@ void flash_firmware(const char* fullPath)
 
 		if ((curren_flash_address % 4096) != 0) curren_flash_address += 4096 - (curren_flash_address % 4096);
 
-        if ((curren_flash_address & 0xffff0000) != curren_flash_address)
-        {
-            DisplayError("PARTITION LENGTH ALIGNMENT ERROR");
-            indicate_error();
-        }
+//        if ((curren_flash_address & 0xffff0000) != curren_flash_address)
+//        {
+//            DisplayError("PARTITION LENGTH ALIGNMENT ERROR");
+//            indicate_error();
+//        }
 
 
         // Data Length
@@ -672,7 +672,7 @@ void flash_firmware(const char* fullPath)
         {
             // turn LED off
             gpio_set_level(GPIO_NUM_2, 0);
-
+	        if ((length % 4096) != 0) length += 4096 - (length % 4096);
             // erase
             int eraseBlocks = length / ERASE_BLOCK_SIZE;
             if (eraseBlocks * ERASE_BLOCK_SIZE < length) ++eraseBlocks;
