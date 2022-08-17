@@ -639,13 +639,13 @@ void flash_firmware(const char* fullPath)
             indicate_error();
         }
 
-		if ((curren_flash_address % 4096) != 0) curren_flash_address += 4096 - (curren_flash_address % 4096);
+		if ((curren_flash_address % 65536) != 0) curren_flash_address += 65536 - (curren_flash_address % 65536);
 
-//        if ((curren_flash_address & 0xffff0000) != curren_flash_address)
-//        {
-//            DisplayError("PARTITION LENGTH ALIGNMENT ERROR");
-//            indicate_error();
-//        }
+        if ((curren_flash_address & 0xffff0000) != curren_flash_address)
+        {
+            DisplayError("PARTITION LENGTH ALIGNMENT ERROR");
+            indicate_error();
+        }
 
 
         // Data Length
